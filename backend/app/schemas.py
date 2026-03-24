@@ -42,3 +42,22 @@ class AnalyzeResult(BaseModel):
     niosh_ratio: float
     notes: list[str]
     derived_angles_deg: dict[str, float]
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(
+        min_length=3,
+        max_length=255,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
+    password: str = Field(min_length=1, max_length=256)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserPublic(BaseModel):
+    email: str
+    display_name: str

@@ -29,6 +29,47 @@ def init_db() -> None:
             );
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                display_name TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+
+
+def seed_demo_user_if_empty() -> None:
+    """Insert a local demo account when the users table has no rows."""
+    from app.auth import hash_password
+
+    with get_connection() as conn:
+        row = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()
+        if row is None or int(row["c"]) > 0:
+            return
+        demo_email = "demo@ergopilot.local"
+        demo_password = "changeme"
+        display_name = "Demo Worker"
+        conn.execute(
+            """
+            INSERT INTO users (email, password_hash, display_name)
+            VALUES (?, ?, ?);
+            """,
+            (demo_email.lower(), hash_password(demo_password), display_name),
+        )
+
+
+def get_user_by_email(email: str) -> dict[str, Any] | None:
+    normalized = email.strip().lower()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, email, password_hash, display_name FROM users WHERE email = ? LIMIT 1;",
+            (normalized,),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def insert_risk_event(

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ErgoPilot – Sign in</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="landing-body">
+    <header class="landing-nav">
+      <div class="landing-nav-left">
+        <a href="./landing.html" class="landing-logo">ErgoPilot</a>
+        <nav class="landing-nav-links">
+          <a href="./landing.html">Home</a>
+          <a href="./index.html">Record</a>
+          <a href="./dashboard.html">Dashboard</a>
+          <a href="./landing.html#benefits">Benefits</a>
+          <a href="./landing.html#how-to">How-to</a>
+        </nav>
+      </div>
+      <div class="landing-nav-cta">
+        <span class="nav-current" aria-current="page">Sign in</span>
+        <a href="./landing.html" class="landing-signin-btn landing-signin-btn--ghost">Back to home</a>
+      </div>
+    </header>
+
+    <main class="signin-main">
+      <section class="signin-card" aria-labelledby="signin-heading">
+        <h1 id="signin-heading">Sign in</h1>
+        <p class="signin-lead">Use your work account to open your posture dashboard.</p>
+
+        <form id="signin-form" class="signin-form" novalidate>
+          <div class="signin-field">
+            <label for="signin-email">Email</label>
+            <input
+              id="signin-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              placeholder="you@company.com"
+            />
+            <p id="signin-email-error" class="signin-field-error" role="alert" hidden></p>
+          </div>
+          <div class="signin-field">
+            <label for="signin-password">Password</label>
+            <input
+              id="signin-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              minlength="8"
+              maxlength="256"
+              placeholder="••••••••"
+            />
+            <p id="signin-password-error" class="signin-field-error" role="alert" hidden></p>
+          </div>
+          <p id="signin-form-error" class="signin-banner-error" role="alert" hidden></p>
+          <button type="submit" id="signin-submit" class="signin-submit">Sign in</button>
+        </form>
+
+        <p class="signin-hint">
+          Demo (local): <code>demo@ergopilot.local</code> / <code>changeme</code>
+        </p>
+      </section>
+    </main>
+
+    <footer class="landing-footer">
+      <p>© <span id="signin-year"></span> ErgoPilot. All rights reserved.</p>
+    </footer>
+
+    <script src="./auth.js"></script>
+    <script>
+      (function () {
+        document.getElementById("signin-year").textContent = new Date().getFullYear();
+
+        var form = document.getElementById("signin-form");
+        var emailEl = document.getElementById("signin-email");
+        var passwordEl = document.getElementById("signin-password");
+        var submitBtn = document.getElementById("signin-submit");
+        var formError = document.getElementById("signin-form-error");
+        var emailError = document.getElementById("signin-email-error");
+        var passwordError = document.getElementById("signin-password-error");
+
+        function clearErrors() {
+          formError.hidden = true;
+          formError.textContent = "";
+          emailError.hidden = true;
+          emailError.textContent = "";
+          passwordError.hidden = true;
+          passwordError.textContent = "";
+          emailEl.removeAttribute("aria-invalid");
+          passwordEl.removeAttribute("aria-invalid");
+        }
+
+        function setLoading(loading) {
+          submitBtn.disabled = loading;
+          submitBtn.setAttribute("aria-busy", loading ? "true" : "false");
+          submitBtn.textContent = loading ? "Signing in…" : "Sign in";
+        }
+
+        function validateClient() {
+          clearErrors();
+          var ok = true;
+          var email = emailEl.value.trim();
+          if (!email) {
+            emailError.textContent = "Enter your email.";
+            emailError.hidden = false;
+            emailEl.setAttribute("aria-invalid", "true");
+            ok = false;
+          } else if (!emailEl.validity.valid) {
+            emailError.textContent = "Enter a valid email address.";
+            emailError.hidden = false;
+            emailEl.setAttribute("aria-invalid", "true");
+            ok = false;
+          }
+          var pw = passwordEl.value;
+          if (!pw) {
+            passwordError.textContent = "Enter your password.";
+            passwordError.hidden = false;
+            passwordEl.setAttribute("aria-invalid", "true");
+            ok = false;
+          } else if (pw.length < 8) {
+            passwordError.textContent = "Password must be at least 8 characters.";
+            passwordError.hidden = false;
+            passwordEl.setAttribute("aria-invalid", "true");
+            ok = false;
+          }
+          return ok;
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var nextRaw = params.get("next");
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          if (!validateClient()) {
+            return;
+          }
+          clearErrors();
+          setLoading(true);
+
+          var base = window.ErgoPilotAuth.getApiBaseUrl();
+          var body = JSON.stringify({
+            email: emailEl.value.trim(),
+            password: passwordEl.value
+          });
+
+          function formatApiError(data) {
+            if (!data || data.detail == null) {
+              return "Could not sign in.";
+            }
+            if (typeof data.detail === "string") {
+              return data.detail;
+            }
+            if (Array.isArray(data.detail) && data.detail.length) {
+              return data.detail
+                .map(function (d) {
+                  return d.msg || "";
+                })
+                .filter(Boolean)
+                .join(" ");
+            }
+            return "Could not sign in.";
+          }
+
+          fetch(base + "/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: body
+          })
+            .then(function (res) {
+              return res.text().then(function (text) {
+                var data = {};
+                if (text) {
+                  try {
+                    data = JSON.parse(text);
+                  } catch (_) {
+                    data = {};
+                  }
+                }
+                return { ok: res.ok, status: res.status, data: data };
+              });
+            })
+            .then(function (result) {
+              if (!result.ok) {
+                throw new Error(formatApiError(result.data));
+              }
+              var token = result.data && result.data.access_token;
+              if (!token) {
+                throw new Error("Invalid response from server.");
+              }
+              window.ErgoPilotAuth.setAccessToken(token);
+              window.location.href = window.ErgoPilotAuth.safeNextPath(nextRaw);
+            })
+            .catch(function (err) {
+              var message =
+                err && err.message
+                  ? err.message
+                  : "Something went wrong. Check your connection and try again.";
+              if (message === "Failed to fetch" || message === "NetworkError when attempting to fetch resource.") {
+                message =
+                  "Cannot reach the API. Start the backend (port 8000) or set window.__ERGOPILOT_API_BASE__.";
+              }
+              formError.textContent = message;
+              formError.hidden = false;
+            })
+            .finally(function () {
+              setLoading(false);
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,11 +1,29 @@
-from fastapi import FastAPI, Query
+import jwt
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.auth import create_access_token, decode_access_token, verify_password
 from app.ergonomics import analyze_pose, build_calibration_profile
-from app.schemas import AnalyzeRequest, CalibrationProfile, CalibrationRequest
-from app.storage import get_recent_events, init_db, insert_risk_event
+from app.schemas import (
+    AnalyzeRequest,
+    CalibrationProfile,
+    CalibrationRequest,
+    LoginRequest,
+    TokenResponse,
+    UserPublic,
+)
+from app.storage import (
+    get_recent_events,
+    get_user_by_email,
+    init_db,
+    insert_risk_event,
+    seed_demo_user_if_empty,
+)
 
 app = FastAPI(title="ErgoPilot Prototype API", version="0.1.0")
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 # In prototype mode we allow localhost browser origins.
 app.add_middleware(
@@ -22,11 +40,74 @@ calibration_profiles: dict[str, CalibrationProfile] = {}
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    seed_demo_user_if_empty()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> UserPublic:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    try:
+        payload = decode_access_token(credentials.credentials)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired. Please sign in again.",
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session",
+        )
+    email = payload.get("sub")
+    display_name = payload.get("name")
+    if not email or not isinstance(email, str):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session",
+        )
+    return UserPublic(email=email, display_name=str(display_name or ""))
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    """Landing JSON when someone opens the API base URL in a browser."""
+    return {
+        "service": app.title,
+        "version": app.version,
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "health": "/health",
+    }
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+def login(payload: LoginRequest) -> TokenResponse:
+    user = get_user_by_email(payload.email)
+    if user is None or not verify_password(payload.password, user["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        )
+    token = create_access_token(
+        subject_email=user["email"],
+        display_name=user["display_name"],
+    )
+    return TokenResponse(access_token=token)
+
+
+@app.get("/api/auth/me", response_model=UserPublic)
+def me(current: UserPublic = Depends(get_current_user)) -> UserPublic:
+    return current
 
 
 @app.post("/api/calibrate")

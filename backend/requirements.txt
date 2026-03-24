@@ -1,3 +1,6 @@
-fastapi==0.115.5
-uvicorn==0.32.0
-pydantic==2.10.3
+# Pydantic 2.12.5+ provides cp314 manylinux wheels; older 2.10.x forces a pydantic-core source build that fails on Python 3.14 (PyO3).
+fastapi==0.115.12
+uvicorn==0.34.0
+pydantic==2.12.5
+PyJWT==2.10.1
+bcrypt==4.2.1
