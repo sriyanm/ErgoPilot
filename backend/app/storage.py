@@ -40,6 +40,27 @@ def init_db() -> None:
             );
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS posture_samples (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                worker_id TEXT NOT NULL,
+                risk_level TEXT NOT NULL,
+                rula_score INTEGER NOT NULL,
+                reba_score INTEGER NOT NULL,
+                rwl_kg REAL NOT NULL,
+                niosh_ratio REAL NOT NULL,
+                frame_ts_ms REAL
+            );
+            """
+        )
+        cols = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(posture_samples);").fetchall()
+        }
+        if "frame_ts_ms" not in cols:
+            conn.execute("ALTER TABLE posture_samples ADD COLUMN frame_ts_ms REAL;")
 
 
 def seed_demo_user_if_empty() -> None:
@@ -80,9 +101,9 @@ def insert_risk_event(
     rwl_kg: float,
     niosh_ratio: float,
     landmarks_payload: list[dict[str, Any]],
-) -> None:
+) -> int:
     with get_connection() as conn:
-        conn.execute(
+        cursor = conn.execute(
             """
             INSERT INTO risk_events (
                 worker_id, risk_level, rula_score, reba_score, rwl_kg, niosh_ratio, landmarks_json
@@ -99,6 +120,43 @@ def insert_risk_event(
                 json.dumps(landmarks_payload),
             ),
         )
+        row_id = cursor.lastrowid
+        if row_id is None:
+            raise RuntimeError("Failed to insert risk event.")
+        return row_id
+
+
+def insert_posture_sample(
+    worker_id: str,
+    risk_level: str,
+    rula_score: int,
+    reba_score: int,
+    rwl_kg: float,
+    niosh_ratio: float,
+    frame_ts_ms: float | None,
+) -> int:
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO posture_samples (
+                worker_id, risk_level, rula_score, reba_score, rwl_kg, niosh_ratio, frame_ts_ms
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                worker_id,
+                risk_level,
+                rula_score,
+                reba_score,
+                rwl_kg,
+                niosh_ratio,
+                frame_ts_ms,
+            ),
+        )
+        row_id = cursor.lastrowid
+        if row_id is None:
+            raise RuntimeError("Failed to insert posture sample.")
+        return row_id
 
 
 def get_recent_events(limit: int = 50) -> list[dict[str, Any]]:
@@ -114,3 +172,67 @@ def get_recent_events(limit: int = 50) -> list[dict[str, Any]]:
             (limit,),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def delete_risk_event(event_id: int) -> bool:
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM risk_events WHERE id = ?;", (event_id,))
+        return int(cursor.rowcount) > 0
+
+
+def clear_risk_events() -> int:
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM risk_events;")
+        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'risk_events';")
+        return int(cursor.rowcount)
+
+
+def clear_posture_samples() -> int:
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM posture_samples;")
+        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'posture_samples';")
+        return int(cursor.rowcount)
+
+
+def delete_posture_sample(sample_id: int) -> bool:
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM posture_samples WHERE id = ?;", (sample_id,))
+        return int(cursor.rowcount) > 0
+
+
+def delete_posture_samples_in_window(worker_id: str, start_ms: float, end_ms: float) -> int:
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            DELETE FROM posture_samples
+            WHERE worker_id = ?
+              AND frame_ts_ms IS NOT NULL
+              AND frame_ts_ms >= ?
+              AND frame_ts_ms <= ?;
+            """,
+            (worker_id, start_ms, end_ms),
+        )
+        return int(cursor.rowcount)
+
+
+def get_session_averages(days: int) -> dict[str, Any]:
+    interval = f"-{days} days"
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS sample_count,
+                AVG(rula_score) AS rula_avg,
+                AVG(reba_score) AS reba_avg
+            FROM posture_samples
+            WHERE created_at >= datetime('now', ?);
+            """,
+            (interval,),
+        ).fetchone()
+    if row is None:
+        return {"sample_count": 0, "rula_avg": None, "reba_avg": None}
+    return {
+        "sample_count": int(row["sample_count"] or 0),
+        "rula_avg": float(row["rula_avg"]) if row["rula_avg"] is not None else None,
+        "reba_avg": float(row["reba_avg"]) if row["reba_avg"] is not None else None,
+    }

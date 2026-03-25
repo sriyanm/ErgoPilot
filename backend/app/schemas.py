@@ -40,6 +40,8 @@ class AnalyzeResult(BaseModel):
     reba_score: int
     rwl_kg: float
     niosh_ratio: float
+    posture_sample_id: int | None = None
+    risk_event_id: int | None = None
     notes: list[str]
     derived_angles_deg: dict[str, float]
 
@@ -50,7 +52,7 @@ class LoginRequest(BaseModel):
         max_length=255,
         pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
     )
-    password: str = Field(min_length=1, max_length=256)
+    password: str = Field(min_length=8, max_length=256)
 
 
 class TokenResponse(BaseModel):
