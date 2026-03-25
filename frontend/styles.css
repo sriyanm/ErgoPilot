@@ -352,7 +352,7 @@ button:hover {
 }
 
 .landing-tagline {
-  font-size: clamp(3.5rem, 6vw, 5rem);
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
   letter-spacing: 0.02em;
   margin: 0;
 }
@@ -377,7 +377,7 @@ button:hover {
 .landing-section-header p {
   margin: 0;
   color: var(--landing-muted);
-  max-width: 520px;
+  max-width: none;
 }
 
 .landing-card-grid {
@@ -423,6 +423,35 @@ button:hover {
 .landing-contact-form {
   margin-top: 28px;
   max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Center the Contact Us section content */
+#contact.landing-section {
+  text-align: center;
+}
+
+#contact.landing-section .landing-section-header p {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Override: keep Contact Us header centered, but form labels left-aligned */
+#contact.landing-section .landing-contact-form {
+  text-align: left;
+}
+
+#contact.landing-section .landing-contact-form .landing-primary-btn {
+  display: block;
+  text-align: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#contact.landing-section .landing-field label {
+  text-align: left;
 }
 
 .landing-field {
