@@ -11,15 +11,10 @@
       <div class="landing-nav-left">
         <a href="./landing.html" class="landing-logo">ErgoPilot</a>
         <nav class="landing-nav-links">
-          <a href="./landing.html">Home</a>
-          <a href="./index.html">Record</a>
-          <a href="./dashboard.html">Dashboard</a>
-          <a href="./landing.html#benefits">Benefits</a>
-          <a href="./landing.html#how-to">How-to</a>
         </nav>
       </div>
       <div class="landing-nav-cta">
-        <span class="nav-current" aria-current="page">Sign in</span>
+        <span class="nav-current" aria-current="page"></span>
         <a href="./landing.html" class="landing-signin-btn landing-signin-btn--ghost">Back to home</a>
       </div>
     </header>
@@ -73,6 +68,11 @@
     <script src="./auth.js"></script>
     <script>
       (function () {
+        if (window.ErgoPilotAuth && window.ErgoPilotAuth.getAccessToken()) {
+          window.location.replace("./dashboard.html");
+          return;
+        }
+
         document.getElementById("signin-year").textContent = new Date().getFullYear();
 
         var form = document.getElementById("signin-form");

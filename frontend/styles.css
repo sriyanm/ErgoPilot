@@ -661,7 +661,7 @@ button:hover {
 /* Sign-in page */
 
 .signin-main {
-  max-width: 480px;
+  max-width: 500px;
   margin: 0 auto;
   padding: 48px 24px 64px;
 }

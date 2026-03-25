@@ -10,17 +10,9 @@
     <header class="landing-nav">
       <div class="landing-nav-left">
         <a href="./landing.html" class="landing-logo">ErgoPilot</a>
-        <nav class="landing-nav-links" aria-label="Main">
-          <a href="./landing.html">Home</a>
-          <a href="./landing.html#benefits">Benefits</a>
-          <a href="./landing.html#how-to">How-to</a>
-          <a href="./landing.html#contact">Contact</a>
-          <span class="nav-current" aria-current="page">Record</span>
-        </nav>
       </div>
       <div class="landing-nav-cta">
-        <a href="./dashboard.html" class="landing-nav-secondary">Dashboard</a>
-        <a href="./signin.html" class="landing-signin-btn">Sign in</a>
+        <a href="./dashboard.html" class="landing-nav-secondary">Back to Dashboard</a>
       </div>
     </header>
 
@@ -88,6 +80,15 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="./auth.js"></script>
+    <script>
+      (function () {
+        var auth = window.ErgoPilotAuth;
+        if (!auth || !auth.getAccessToken()) {
+          window.location.replace("./landing.html");
+        }
+      })();
+    </script>
     <script src="./app.js"></script>
   </body>
 </html>

@@ -17,9 +17,7 @@
         </nav>
       </div>
       <div class="landing-nav-cta">
-        <a href="./index.html" class="landing-nav-secondary">Record</a>
-        <a href="./dashboard.html" class="landing-nav-secondary">Dashboard</a>
-        <a href="./signin.html" class="landing-signin-btn">Sign in</a>
+        <a id="landing-auth-link" href="./signin.html" class="landing-signin-btn">Sign in</a>
       </div>
     </header>
 
@@ -119,9 +117,21 @@
       <p>© <span id="landing-year"></span> ErgoPilot. All rights reserved.</p>
     </footer>
 
+    <script src="./auth.js"></script>
     <script>
       // Set current year in footer
       document.getElementById("landing-year").textContent = new Date().getFullYear();
+
+      // Swap nav CTA when a user already has a session token.
+      (function () {
+        var auth = window.ErgoPilotAuth;
+        var cta = document.getElementById("landing-auth-link");
+        if (!auth || !cta) return;
+        if (auth.getAccessToken()) {
+          cta.textContent = "Dashboard";
+          cta.setAttribute("href", "./dashboard.html");
+        }
+      })();
     </script>
   </body>
 </html>
