@@ -3,6 +3,7 @@ const API_BASE_URL = auth ? auth.getApiBaseUrl() : "http://localhost:8000";
 const DB_VERSION = 3;
 const CLIP_DURATION_MS = 5000;
 const CLIP_COOLDOWN_MS = 15000;
+const PRESTART_COUNTDOWN_SECONDS = 5;
 const DEFAULT_WORKER_ID = "worker-self";
 
 const videoEl = document.querySelector(".input-video");
@@ -17,6 +18,8 @@ const refreshClipsBtn = document.getElementById("refresh-clips-btn");
 const clearAllDataBtn = document.getElementById("clear-all-data-btn");
 const notesEl = document.getElementById("notes");
 const statusPill = document.getElementById("status-pill");
+const countdownOverlayEl = document.getElementById("countdown-overlay");
+const countdownValueEl = document.getElementById("countdown-value");
 const loadKgEl = document.getElementById("load-kg");
 const freqEl = document.getElementById("freq");
 const maxClipsEl = document.getElementById("max-clips");
@@ -33,9 +36,12 @@ let idb = null;
 let camera = null;
 let pose = null;
 let isCameraRunning = false;
+let isAnalysisActive = false;
 let captureSessionToken = 0;
 let clipInProgress = false;
 let lastClipAt = 0;
+let countdownIntervalId = null;
+let countdownRemaining = 0;
 
 function getJsonHeaders() {
   if (!auth) {
@@ -274,6 +280,55 @@ function setRiskUi(level) {
   statusPill.textContent = level.toUpperCase();
 }
 
+function hideCountdownOverlay() {
+  if (countdownOverlayEl) {
+    countdownOverlayEl.classList.add("status-pill--hidden");
+  }
+  if (countdownValueEl) {
+    countdownValueEl.textContent = String(PRESTART_COUNTDOWN_SECONDS);
+  }
+}
+
+function beginPrestartCountdown() {
+  if (!countdownOverlayEl || !countdownValueEl) {
+    isAnalysisActive = true;
+    setRiskUi("safe");
+    notesEl.textContent = "Analysis started. Move naturally and monitor feedback.";
+    return;
+  }
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+  countdownRemaining = PRESTART_COUNTDOWN_SECONDS;
+  countdownValueEl.textContent = String(countdownRemaining);
+  countdownOverlayEl.classList.remove("status-pill--hidden");
+  notesEl.textContent =
+    "Camera live. Starting analysis in " + String(countdownRemaining) + " seconds...";
+
+  countdownIntervalId = setInterval(() => {
+    if (!isCameraRunning) {
+      clearInterval(countdownIntervalId);
+      countdownIntervalId = null;
+      return;
+    }
+    countdownRemaining -= 1;
+    if (countdownRemaining <= 0) {
+      clearInterval(countdownIntervalId);
+      countdownIntervalId = null;
+      hideCountdownOverlay();
+      isAnalysisActive = true;
+      lastAnalyzeAt = 0;
+      setRiskUi("safe");
+      notesEl.textContent = "Analysis started. Move naturally and monitor feedback.";
+      return;
+    }
+    countdownValueEl.textContent = String(countdownRemaining);
+    notesEl.textContent =
+      "Camera live. Starting analysis in " + String(countdownRemaining) + " seconds...";
+  }, 1000);
+}
+
 function getPoseBoundsPx(poseLandmarks, width, height) {
   if (!poseLandmarks || !poseLandmarks.length) return null;
   let minX = width;
@@ -499,6 +554,7 @@ async function onResults(results) {
   if (!results.poseLandmarks) return;
 
   latestLandmarks = results.poseLandmarks;
+  if (!isAnalysisActive) return;
   const now = Date.now();
   if (now - lastAnalyzeAt < 250) return;
   lastAnalyzeAt = now;
@@ -560,14 +616,22 @@ async function startCameraAndPose() {
   pose = localPose;
   await camera.start();
   isCameraRunning = true;
+  isAnalysisActive = false;
   startBtn.textContent = "Stop Camera";
-  setRiskUi("safe");
-  notesEl.textContent = "Camera running. Keep full body in frame, then click Set Baseline Posture.";
+  statusPill.classList.add("status-pill--hidden");
+  beginPrestartCountdown();
 }
 
 async function stopCameraAndPose() {
   isCameraRunning = false;
+  isAnalysisActive = false;
   captureSessionToken += 1;
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+  countdownRemaining = 0;
+  hideCountdownOverlay();
   if (camera && typeof camera.stop === "function") {
     await camera.stop();
   }
@@ -692,3 +756,5 @@ initIndexedDb()
   .catch((error) => {
     notesEl.textContent = `IndexedDB unavailable: ${error.message}`;
   });
+
+hideCountdownOverlay();
