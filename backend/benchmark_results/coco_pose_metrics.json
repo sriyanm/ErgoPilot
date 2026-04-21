@@ -1,0 +1,98 @@
+{
+  "instances_requested": 300,
+  "instances_processed": 237,
+  "skipped_no_image": 0,
+  "skipped_no_pose": 63,
+  "keypoints_evaluated": 3114,
+  "mean_norm_error": 0.12930200802394445,
+  "median_norm_error": 0.05249735283240596,
+  "pck@0.05": 0.48683365446371224,
+  "pck@0.10": 0.674373795761079,
+  "per_joint": {
+    "left_ankle": {
+      "count": 141,
+      "mean_norm_error": 0.19597256618977385,
+      "pck@0.10": 0.5319148936170213
+    },
+    "left_ear": {
+      "count": 129,
+      "mean_norm_error": 0.09192776029399413,
+      "pck@0.10": 0.813953488372093
+    },
+    "left_elbow": {
+      "count": 200,
+      "mean_norm_error": 0.13891740728060284,
+      "pck@0.10": 0.615
+    },
+    "left_eye": {
+      "count": 164,
+      "mean_norm_error": 0.06761951790490164,
+      "pck@0.10": 0.8597560975609756
+    },
+    "left_hip": {
+      "count": 213,
+      "mean_norm_error": 0.15175756107681307,
+      "pck@0.10": 0.5492957746478874
+    },
+    "left_knee": {
+      "count": 165,
+      "mean_norm_error": 0.18063234458280492,
+      "pck@0.10": 0.49696969696969695
+    },
+    "left_shoulder": {
+      "count": 235,
+      "mean_norm_error": 0.11080331696303866,
+      "pck@0.10": 0.7404255319148936
+    },
+    "left_wrist": {
+      "count": 177,
+      "mean_norm_error": 0.1445593230691478,
+      "pck@0.10": 0.5988700564971752
+    },
+    "nose": {
+      "count": 194,
+      "mean_norm_error": 0.06916686791267099,
+      "pck@0.10": 0.8556701030927835
+    },
+    "right_ankle": {
+      "count": 145,
+      "mean_norm_error": 0.18213286289472636,
+      "pck@0.10": 0.5655172413793104
+    },
+    "right_ear": {
+      "count": 153,
+      "mean_norm_error": 0.09429182728277095,
+      "pck@0.10": 0.8235294117647058
+    },
+    "right_elbow": {
+      "count": 207,
+      "mean_norm_error": 0.13668758509975973,
+      "pck@0.10": 0.6376811594202898
+    },
+    "right_eye": {
+      "count": 180,
+      "mean_norm_error": 0.07116262137559547,
+      "pck@0.10": 0.8666666666666667
+    },
+    "right_hip": {
+      "count": 216,
+      "mean_norm_error": 0.15075868677320128,
+      "pck@0.10": 0.5555555555555556
+    },
+    "right_knee": {
+      "count": 172,
+      "mean_norm_error": 0.1753090373399607,
+      "pck@0.10": 0.5523255813953488
+    },
+    "right_shoulder": {
+      "count": 234,
+      "mean_norm_error": 0.10908276128382353,
+      "pck@0.10": 0.7649572649572649
+    },
+    "right_wrist": {
+      "count": 189,
+      "mean_norm_error": 0.14247510428605104,
+      "pck@0.10": 0.6402116402116402
+    }
+  }
+}
