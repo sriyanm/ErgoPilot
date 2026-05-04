@@ -1,6 +1,8 @@
-# ErgoPilot Prototype
+[View Project Demo](https://drive.google.com/file/d/1sCTu_4U2JZJwUeBW3QO0bLgsnKR-Ba3e/view?usp=sharing)
 
-Prototype implementation for a privacy-first ergonomic feedback system.
+# ErgoPilot
+
+A privacy-first ergonomic feedback system.
 
 ## Architecture
 
@@ -12,7 +14,7 @@ Prototype implementation for a privacy-first ergonomic feedback system.
 - Raw video frames are processed live in browser only.
 - Persisted records contain only skeletal landmarks and derived risk scores.
 - Risk clips are stored as anonymized context videos in browser IndexedDB (`risk_clips`): the worker region is blurred/masked, surrounding scene remains visible, and the skeleton wireframe is overlaid.
-- No cloud storage is required for this prototype.
+- No cloud storage is required.
 
 ## Backend setup
 
@@ -79,7 +81,7 @@ Open: `http://localhost:5173`
 
 ## Notes
 
-- Scoring logic is a prototype approximation designed for rapid validation.
+- Scoring logic is an approximation designed for rapid validation.
 - For production-grade scores, replace heuristic mappings with full RULA/REBA/NIOSH worksheets and validated calibration pipelines.
 - Clip capture is browser-dependent (`MediaRecorder`). If unsupported, the app still stores skeletal risk events.
 
@@ -111,7 +113,7 @@ If Ollama is unavailable, the app automatically falls back to the original rule-
 
 ## Quantitative CV benchmark (COCO)
 
-Best first benchmark for this prototype: evaluate MediaPipe keypoint accuracy on an online public dataset (COCO val2017) before ergonomic score-level validation.
+Best benchmark: evaluate MediaPipe keypoint accuracy on an online public dataset (COCO val2017) before ergonomic score-level validation.
 
 ### 1) Install benchmark dependencies
 
